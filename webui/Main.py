@@ -322,7 +322,7 @@ with middle_panel:
         cfg["voice_name"] = voice_name
         save_config()
 
-        voice_rate = st.text_input(tr("Voice rate"))
+        voice_rate = st.text_input(tr("Voice rate"), "-30%")
         params.voice_rate = voice_rate
 
         bgm_options = [
@@ -365,7 +365,7 @@ with right_panel:
         ]
         selected_index = st.selectbox(
             tr("Position"),
-            index=2,
+            index=1,
             options=range(len(subtitle_positions)),  # 使用索引作为内部选项值
             format_func=lambda x: subtitle_positions[x][0],  # 显示给用户的是标签
         )
@@ -373,13 +373,13 @@ with right_panel:
 
         font_cols = st.columns([0.3, 0.7])
         with font_cols[0]:
-            params.text_fore_color = st.color_picker(tr("Font Color"), "#FFFFFF")
+            params.text_fore_color = st.color_picker(tr("Font Color"), "#FF0000")
         with font_cols[1]:
             params.font_size = st.slider(tr("Font Size"), 30, 100, 60)
 
         stroke_cols = st.columns([0.3, 0.7])
         with stroke_cols[0]:
-            params.stroke_color = st.color_picker(tr("Stroke Color"), "#000000")
+            params.stroke_color = st.color_picker(tr("Stroke Color"), "#FF0000")
         with stroke_cols[1]:
             params.stroke_width = st.slider(tr("Stroke Width"), 0.0, 10.0, 1.5)
 

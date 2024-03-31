@@ -9,3 +9,4 @@
 /app/utils/__pycache__/
 /*/__pycache__/*
 *__pycache__*
+webui/.streamlit/webui.toml
