@@ -16,7 +16,12 @@
     #   g4f
     #   azure
     #   qwen (通义千问)
+    #   Gemini
     llm_provider="openai"
+
+    ########## Gemini API Key
+    gemini_api_key = ""
+    gemini_model_name = "gemini-1.0-pro"
 
     ########## OpenAI API Key
     # Get your API key at https://platform.openai.com/api-keys

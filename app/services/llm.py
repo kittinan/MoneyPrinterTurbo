@@ -17,6 +17,7 @@ def _generate_response(prompt: str) -> str:
         if not model_name:
             model_name = "gpt-3.5-turbo-16k-0613"
         import g4f
+
         content = g4f.ChatCompletion.create(
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
@@ -46,24 +47,78 @@ def _generate_response(prompt: str) -> str:
             api_key = config.app.get("qwen_api_key")
             model_name = config.app.get("qwen_model_name")
             base_url = "***"
+        elif llm_provider == "gemini":
+            api_key = config.app.get("gemini_api_key")
+            model_name = config.app.get("gemini_model_name", "gemini-1.0-pro")
+            base_url = "***"
         else:
-            raise ValueError("llm_provider is not set, please set it in the config.toml file.")
+            raise ValueError(
+                "llm_provider is not set, please set it in the config.toml file."
+            )
 
         if not api_key:
-            raise ValueError(f"{llm_provider}: api_key is not set, please set it in the config.toml file.")
+            raise ValueError(
+                f"{llm_provider}: api_key is not set, please set it in the config.toml file."
+            )
         if not model_name:
-            raise ValueError(f"{llm_provider}: model_name is not set, please set it in the config.toml file.")
+            raise ValueError(
+                f"{llm_provider}: model_name is not set, please set it in the config.toml file."
+            )
         if not base_url:
-            raise ValueError(f"{llm_provider}: base_url is not set, please set it in the config.toml file.")
+            raise ValueError(
+                f"{llm_provider}: base_url is not set, please set it in the config.toml file."
+            )
 
         if llm_provider == "qwen":
             import dashscope
+
             dashscope.api_key = api_key
             response = dashscope.Generation.call(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt}]
+                model=model_name, messages=[{"role": "user", "content": prompt}]
             )
             content = response["output"]["text"]
+            return content.replace("\n", "")
+
+        if llm_provider == "gemini":
+            import google.generativeai as gemini
+
+            gemini.configure(api_key=api_key)
+            generation_config = {
+                "temperature": 0.9,
+                "top_p": 1,
+                "top_k": 1,
+                "max_output_tokens": 2048,
+            }
+
+            safety_settings = [
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
+            ]
+
+            model = gemini.GenerativeModel(
+                model_name=model_name,
+                generation_config=generation_config,
+                safety_settings=safety_settings,
+            )
+
+            convo = model.start_chat(history=[])
+
+            convo.send_message(prompt)
+            content = convo.last.text
             return content.replace("\n", "")
 
         if llm_provider == "azure":
@@ -79,8 +134,7 @@ def _generate_response(prompt: str) -> str:
             )
 
         response = client.chat.completions.create(
-            model=model_name,
-            messages=[{"role": "user", "content": prompt}]
+            model=model_name, messages=[{"role": "user", "content": prompt}]
         )
         if response:
             content = response.choices[0].message.content
@@ -88,7 +142,9 @@ def _generate_response(prompt: str) -> str:
     return content.replace("\n", "")
 
 
-def generate_script(video_subject: str, language: str = "", paragraph_number: int = 1) -> str:
+def generate_script(
+    video_subject: str, language: str = "", paragraph_number: int = 1
+) -> str:
     prompt = f"""
 # Role: Video Script Generator
 
@@ -180,7 +236,9 @@ Please note that you must use English for generating video search terms; Chinese
 
     try:
         search_terms = json.loads(response)
-        if not isinstance(search_terms, list) or not all(isinstance(term, str) for term in search_terms):
+        if not isinstance(search_terms, list) or not all(
+            isinstance(term, str) for term in search_terms
+        ):
             raise ValueError("response is not a list of strings.")
 
     except (json.JSONDecodeError, ValueError):
@@ -200,7 +258,9 @@ Please note that you must use English for generating video search terms; Chinese
 
 if __name__ == "__main__":
     video_subject = "生命的意义是什么"
-    script = generate_script(video_subject=video_subject, language="zh-CN", paragraph_number=1)
+    script = generate_script(
+        video_subject=video_subject, language="zh-CN", paragraph_number=1
+    )
     # print("######################")
     # print(script)
     # search_terms = generate_terms(video_subject=video_subject, video_script=script, amount=5)
