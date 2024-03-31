@@ -955,7 +955,7 @@ Name: zu-ZA-ThembaNeural
 Gender: Male
     """.strip()
     voices = []
-    name = ''
+    name = ""
     for line in voices_str.split("\n"):
         line = line.strip()
         if not line:
@@ -975,7 +975,7 @@ Gender: Male
                             voices.append(f"{name}-{gender}")
                 else:
                     voices.append(f"{name}-{gender}")
-                name = ''
+                name = ""
     voices.sort()
     return voices
 
@@ -987,19 +987,24 @@ def parse_voice_name(name: str):
     return name
 
 
-def tts(text: str, voice_name: str, voice_file: str) -> [SubMaker, None]:
+def tts(
+    text: str, voice_name: str, voice_file: str, voice_rate: str = "+0%"
+) -> [SubMaker, None]:
     text = text.strip()
     logger.info(f"start, voice name: {voice_name}")
     try:
+
         async def _do() -> SubMaker:
-            communicate = edge_tts.Communicate(text, voice_name)
+            communicate = edge_tts.Communicate(text, voice_name, rate=voice_rate)
             sub_maker = edge_tts.SubMaker()
             with open(voice_file, "wb") as file:
                 async for chunk in communicate.stream():
                     if chunk["type"] == "audio":
                         file.write(chunk["data"])
                     elif chunk["type"] == "WordBoundary":
-                        sub_maker.create_sub((chunk["offset"], chunk["duration"]), chunk["text"])
+                        sub_maker.create_sub(
+                            (chunk["offset"], chunk["duration"]), chunk["text"]
+                        )
             return sub_maker
 
         sub_maker = asyncio.run(_do())
@@ -1011,6 +1016,50 @@ def tts(text: str, voice_name: str, voice_file: str) -> [SubMaker, None]:
 
 
 def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str):
+
+    def convert_vtt_to_srt(vtt_data):
+        """Converts a string of VTT subtitle data to SRT format.
+
+        Args:
+            vtt_data: A string containing the VTT subtitle data.
+
+        Returns:
+            A string containing the converted SRT subtitle data.
+        """
+        # Split the VTT data into lines
+        lines = vtt_data.splitlines()
+        output = ""
+        cue_id = 1
+
+        # Iterate through lines
+        for line in lines[1:]:
+            # Remove empty lines and lines starting with "#" (comments)
+            if not line.strip() or line.startswith("#"):
+                continue
+
+            # Extract timestamp (format: HH:MM:SS.mmm --> HH:MM:SS.mmm)
+            match = re.search(
+                r"(\d{2}):(\d{2}):(\d{2})\.(\d{3}) --> (\d{2}):(\d{2}):(\d{2})\.(\d{3})",
+                line,
+            )
+            if match:
+                start_time = f"{match.group(1)}:{match.group(2)}:{match.group(3)},{match.group(4)}"
+                end_time = f"{match.group(5)}:{match.group(6)}:{match.group(7)},{match.group(8)}"
+
+                # Add cue number, timestamps and subtitle text to output
+                output += f"{cue_id}\n{start_time} --> {end_time}\n"
+                cue_id += 1
+            else:
+                # Append subtitle text (multiple lines possible)
+                output += line + "\n\n"
+
+        return output
+
+    with open(subtitle_file, "w", encoding="utf-8") as file:
+        file.write(convert_vtt_to_srt(sub_maker.generate_subs()))
+
+
+def _create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str):
     """
     优化字幕文件
     1. 将字幕文件按照标点符号分割成多行
@@ -1027,11 +1076,7 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
         """
         start_t = mktimestamp(start_time).replace(".", ",")
         end_t = mktimestamp(end_time).replace(".", ",")
-        return (
-            f"{idx}\n"
-            f"{start_t} --> {end_t}\n"
-            f"{sub_text}\n"
-        )
+        return f"{idx}\n" f"{start_t} --> {end_t}\n" f"{sub_text}\n"
 
     start_time = -1.0
     sub_items = []
@@ -1086,7 +1131,9 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
             with open(subtitle_file, "w", encoding="utf-8") as file:
                 file.write("\n".join(sub_items) + "\n")
         else:
-            logger.warning(f"failed, sub_items len: {len(sub_items)}, script_lines len: {len(script_lines)}")
+            logger.warning(
+                f"failed, sub_items len: {len(sub_items)}, script_lines len: {len(script_lines)}"
+            )
 
     except Exception as e:
         logger.error(f"failed, error: {str(e)}")
@@ -1106,18 +1153,18 @@ if __name__ == "__main__":
     print(voices)
     print(len(voices))
 
-
-    async def _do():
+    def _do():
         temp_dir = utils.storage_dir("temp")
 
         voice_names = [
             # 女性
-            "zh-CN-XiaoxiaoNeural",
-            "zh-CN-XiaoyiNeural",
+            # "zh-CN-XiaoxiaoNeural",
+            # "zh-CN-XiaoyiNeural",
             # 男性
-            "zh-CN-YunyangNeural",
+            # "zh-CN-YunyangNeural",
             "zh-CN-YunxiNeural",
         ]
+        voice_names = ["th-TH-PremwadeeNeural"]
         text = """
         静夜思是唐代诗人李白创作的一首五言古诗。这首诗描绘了诗人在寂静的夜晚，看到窗前的明月，不禁想起远方的家乡和亲人，表达了他对家乡和亲人的深深思念之情。全诗内容是：“床前明月光，疑是地上霜。举头望明月，低头思故乡。”在这短短的四句诗中，诗人通过“明月”和“思故乡”的意象，巧妙地表达了离乡背井人的孤独与哀愁。首句“床前明月光”设景立意，通过明亮的月光引出诗人的遐想；“疑是地上霜”增添了夜晚的寒冷感，加深了诗人的孤寂之情；“举头望明月”和“低头思故乡”则是情感的升华，展现了诗人内心深处的乡愁和对家的渴望。这首诗简洁明快，情感真挚，是中国古典诗歌中非常著名的一首，也深受后人喜爱和推崇。
             """
@@ -1140,9 +1187,10 @@ if __name__ == "__main__":
             audio_duration = get_audio_duration(sub_maker)
             print(f"voice: {voice_name}, audio duration: {audio_duration}s")
 
+    _do()
 
-    loop = asyncio.get_event_loop_policy().get_event_loop()
-    try:
-        loop.run_until_complete(_do())
-    finally:
-        loop.close()
+    # loop = asyncio.get_event_loop_policy().get_event_loop()
+    # try:
+    #     loop.run_until_complete(_do())
+    # finally:
+    #     loop.close()

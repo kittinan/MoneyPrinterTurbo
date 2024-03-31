@@ -5,7 +5,11 @@ from pydantic import BaseModel
 import warnings
 
 # 忽略 Pydantic 的特定警告
-warnings.filterwarnings("ignore", category=UserWarning, message="Field name.*shadows an attribute in parent.*")
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="Field name.*shadows an attribute in parent.*",
+)
 
 
 class VideoConcatMode(str, Enum):
@@ -87,6 +91,7 @@ class VideoParams:
       "stroke_width": 1.5
     }
     """
+
     video_subject: str
     video_script: str = ""  # 用于生成视频的脚本
     video_terms: Optional[str | list] = None  # 用于生成视频的关键词
@@ -98,6 +103,7 @@ class VideoParams:
     video_language: Optional[str] = ""  # auto detect
 
     voice_name: Optional[str] = ""
+    voice_rate: Optional[str] = "+0%"
     bgm_type: Optional[str] = "random"
     bgm_file: Optional[str] = ""
     bgm_volume: Optional[float] = 0.2
@@ -117,7 +123,7 @@ class VideoParams:
 
 class BaseResponse(BaseModel):
     status: int = 200
-    message: Optional[str] = 'success'
+    message: Optional[str] = "success"
     data: Any = None
 
 

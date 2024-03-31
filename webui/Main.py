@@ -9,17 +9,19 @@ import streamlit.components.v1 as components
 import toml
 from loguru import logger
 
-st.set_page_config(page_title="MoneyPrinterTurbo",
-                   page_icon="🤖",
-                   layout="wide",
-                   initial_sidebar_state="auto",
-                   menu_items={
-                       'Report a bug': "https://github.com/harry0703/MoneyPrinterTurbo/issues",
-                       'About': "# MoneyPrinterTurbo\nSimply provide a topic or keyword for a video, and it will "
-                                "automatically generate the video copy, video materials, video subtitles, "
-                                "and video background music before synthesizing a high-definition short "
-                                "video.\n\nhttps://github.com/harry0703/MoneyPrinterTurbo"
-                   })
+st.set_page_config(
+    page_title="MoneyPrinterTurbo",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="auto",
+    menu_items={
+        "Report a bug": "https://github.com/harry0703/MoneyPrinterTurbo/issues",
+        "About": "# MoneyPrinterTurbo\nSimply provide a topic or keyword for a video, and it will "
+        "automatically generate the video copy, video materials, video subtitles, "
+        "and video background music before synthesizing a high-definition short "
+        "video.\n\nhttps://github.com/harry0703/MoneyPrinterTurbo",
+    },
+)
 
 from app.models.schema import VideoParams, VideoAspect, VideoConcatMode
 from app.services import task as tm, llm, voice
@@ -64,14 +66,14 @@ def get_system_locale():
         return "en"
 
 
-if 'video_subject' not in st.session_state:
-    st.session_state['video_subject'] = ''
-if 'video_script' not in st.session_state:
-    st.session_state['video_script'] = ''
-if 'video_terms' not in st.session_state:
-    st.session_state['video_terms'] = ''
-if 'ui_language' not in st.session_state:
-    st.session_state['ui_language'] = cfg.get("ui_language", get_system_locale())
+if "video_subject" not in st.session_state:
+    st.session_state["video_subject"] = ""
+if "video_script" not in st.session_state:
+    st.session_state["video_script"] = ""
+if "video_terms" not in st.session_state:
+    st.session_state["video_terms"] = ""
+if "ui_language" not in st.session_state:
+    st.session_state["ui_language"] = cfg.get("ui_language", get_system_locale())
 
 
 def get_all_fonts():
@@ -97,9 +99,9 @@ def open_task_folder(task_id):
         sys = platform.system()
         path = os.path.join(root_dir, "storage", "tasks", task_id)
         if os.path.exists(path):
-            if sys == 'Windows':
+            if sys == "Windows":
                 os.system(f"start {path}")
-            if sys == 'Darwin':
+            if sys == "Darwin":
                 os.system(f"open {path}")
     except Exception as e:
         logger.error(e)
@@ -135,12 +137,15 @@ def init_log():
         record["file"].path = f"./{relative_path}"
         # 返回修改后的格式字符串
         # 您可以根据需要调整这里的格式
-        record['message'] = record['message'].replace(root_dir, ".")
+        record["message"] = record["message"].replace(root_dir, ".")
 
-        _format = '<green>{time:%Y-%m-%d %H:%M:%S}</> | ' + \
-                  '<level>{level}</> | ' + \
-                  '"{file.path}:{line}":<blue> {function}</> ' + \
-                  '- <level>{message}</>' + "\n"
+        _format = (
+            "<green>{time:%Y-%m-%d %H:%M:%S}</> | "
+            + "<level>{level}</> | "
+            + '"{file.path}:{line}":<blue> {function}</> '
+            + "- <level>{message}</>"
+            + "\n"
+        )
         return _format
 
     logger.add(
@@ -169,7 +174,7 @@ locales = load_locales()
 
 
 def tr(key):
-    loc = locales.get(st.session_state['ui_language'], {})
+    loc = locales.get(st.session_state["ui_language"], {})
     return loc.get("Translation", {}).get(key, key)
 
 
@@ -177,15 +182,19 @@ display_languages = []
 selected_index = 0
 for i, code in enumerate(locales.keys()):
     display_languages.append(f"{code} - {locales[code].get('Language')}")
-    if code == st.session_state['ui_language']:
+    if code == st.session_state["ui_language"]:
         selected_index = i
 
-selected_language = st.selectbox("Language", options=display_languages, label_visibility='collapsed',
-                                 index=selected_index)
+selected_language = st.selectbox(
+    "Language",
+    options=display_languages,
+    label_visibility="collapsed",
+    index=selected_index,
+)
 if selected_language:
     code = selected_language.split(" - ")[0].strip()
-    st.session_state['ui_language'] = code
-    cfg['ui_language'] = code
+    st.session_state["ui_language"] = code
+    cfg["ui_language"] = code
     save_config()
 
 panel = st.columns(3)
@@ -198,8 +207,9 @@ params = VideoParams()
 with left_panel:
     with st.container(border=True):
         st.write(tr("Video Script Settings"))
-        params.video_subject = st.text_input(tr("Video Subject"),
-                                             value=st.session_state['video_subject']).strip()
+        params.video_subject = st.text_input(
+            tr("Video Subject"), value=st.session_state["video_subject"]
+        ).strip()
 
         video_languages = [
             (tr("Auto Detect"), ""),
@@ -207,24 +217,27 @@ with left_panel:
         for code in ["zh-CN", "zh-TW", "de-DE", "en-US"]:
             video_languages.append((code, code))
 
-        selected_index = st.selectbox(tr("Script Language"),
-                                      index=0,
-                                      options=range(len(video_languages)),  # 使用索引作为内部选项值
-                                      format_func=lambda x: video_languages[x][0]  # 显示给用户的是标签
-                                      )
+        selected_index = st.selectbox(
+            tr("Script Language"),
+            index=0,
+            options=range(len(video_languages)),  # 使用索引作为内部选项值
+            format_func=lambda x: video_languages[x][0],  # 显示给用户的是标签
+        )
         params.video_language = video_languages[selected_index][1]
 
-        if st.button(tr("Generate Video Script and Keywords"), key="auto_generate_script"):
+        if st.button(
+            tr("Generate Video Script and Keywords"), key="auto_generate_script"
+        ):
             with st.spinner(tr("Generating Video Script and Keywords")):
-                script = llm.generate_script(video_subject=params.video_subject, language=params.video_language)
+                script = llm.generate_script(
+                    video_subject=params.video_subject, language=params.video_language
+                )
                 terms = llm.generate_terms(params.video_subject, script)
-                st.session_state['video_script'] = script
-                st.session_state['video_terms'] = ", ".join(terms)
+                st.session_state["video_script"] = script
+                st.session_state["video_terms"] = ", ".join(terms)
 
         params.video_script = st.text_area(
-            tr("Video Script"),
-            value=st.session_state['video_script'],
-            height=180
+            tr("Video Script"), value=st.session_state["video_script"], height=180
         )
         if st.button(tr("Generate Video Keywords"), key="auto_generate_terms"):
             if not params.video_script:
@@ -233,12 +246,11 @@ with left_panel:
 
             with st.spinner(tr("Generating Video Keywords")):
                 terms = llm.generate_terms(params.video_subject, params.video_script)
-                st.session_state['video_terms'] = ", ".join(terms)
+                st.session_state["video_terms"] = ", ".join(terms)
 
         params.video_terms = st.text_area(
-            tr("Video Keywords"),
-            value=st.session_state['video_terms'],
-            height=50)
+            tr("Video Keywords"), value=st.session_state["video_terms"], height=50
+        )
 
 with middle_panel:
     with st.container(border=True):
@@ -247,64 +259,83 @@ with middle_panel:
             (tr("Sequential"), "sequential"),
             (tr("Random"), "random"),
         ]
-        selected_index = st.selectbox(tr("Video Concat Mode"),
-                                      index=1,
-                                      options=range(len(video_concat_modes)),  # 使用索引作为内部选项值
-                                      format_func=lambda x: video_concat_modes[x][0]  # 显示给用户的是标签
-                                      )
-        params.video_concat_mode = VideoConcatMode(video_concat_modes[selected_index][1])
+        selected_index = st.selectbox(
+            tr("Video Concat Mode"),
+            index=1,
+            options=range(len(video_concat_modes)),  # 使用索引作为内部选项值
+            format_func=lambda x: video_concat_modes[x][0],  # 显示给用户的是标签
+        )
+        params.video_concat_mode = VideoConcatMode(
+            video_concat_modes[selected_index][1]
+        )
 
         video_aspect_ratios = [
             (tr("Portrait"), VideoAspect.portrait.value),
             (tr("Landscape"), VideoAspect.landscape.value),
         ]
-        selected_index = st.selectbox(tr("Video Ratio"),
-                                      options=range(len(video_aspect_ratios)),  # 使用索引作为内部选项值
-                                      format_func=lambda x: video_aspect_ratios[x][0]  # 显示给用户的是标签
-                                      )
+        selected_index = st.selectbox(
+            tr("Video Ratio"),
+            options=range(len(video_aspect_ratios)),  # 使用索引作为内部选项值
+            format_func=lambda x: video_aspect_ratios[x][0],  # 显示给用户的是标签
+        )
         params.video_aspect = VideoAspect(video_aspect_ratios[selected_index][1])
 
-        params.video_clip_duration = st.selectbox(tr("Clip Duration"), options=[2, 3, 4, 5, 6], index=1)
-        params.video_count = st.selectbox(tr("Number of Videos Generated Simultaneously"), options=[1, 2, 3, 4, 5],
-                                          index=0)
+        params.video_clip_duration = st.selectbox(
+            tr("Clip Duration"), options=[2, 3, 4, 5, 6], index=1
+        )
+        params.video_count = st.selectbox(
+            tr("Number of Videos Generated Simultaneously"),
+            options=[1, 2, 3, 4, 5],
+            index=0,
+        )
     with st.container(border=True):
         st.write(tr("Audio Settings"))
-        voices = voice.get_all_voices(filter_locals=["zh-CN", "zh-HK", "zh-TW", "de-DE", "en-US"])
+        voices = voice.get_all_voices(
+            filter_locals=["zh-CN", "zh-HK", "zh-TW", "de-DE", "en-US", "th-TH"]
+        )
         friendly_names = {
-            voice: voice.
-            replace("Female", tr("Female")).
-            replace("Male", tr("Male")).
-            replace("Neural", "") for
-            voice in voices}
+            voice: voice.replace("Female", tr("Female"))
+            .replace("Male", tr("Male"))
+            .replace("Neural", "")
+            for voice in voices
+        }
         saved_voice_name = cfg.get("voice_name", "")
         saved_voice_name_index = 0
         if saved_voice_name in friendly_names:
             saved_voice_name_index = list(friendly_names.keys()).index(saved_voice_name)
         else:
             for i, voice in enumerate(voices):
-                if voice.lower().startswith(st.session_state['ui_language'].lower()):
+                if voice.lower().startswith(st.session_state["ui_language"].lower()):
                     saved_voice_name_index = i
                     break
 
-        selected_friendly_name = st.selectbox(tr("Speech Synthesis"),
-                                              options=list(friendly_names.values()),
-                                              index=saved_voice_name_index)
+        selected_friendly_name = st.selectbox(
+            tr("Speech Synthesis"),
+            options=list(friendly_names.values()),
+            index=saved_voice_name_index,
+        )
 
-        voice_name = list(friendly_names.keys())[list(friendly_names.values()).index(selected_friendly_name)]
+        voice_name = list(friendly_names.keys())[
+            list(friendly_names.values()).index(selected_friendly_name)
+        ]
         params.voice_name = voice_name
-        cfg['voice_name'] = voice_name
+        cfg["voice_name"] = voice_name
         save_config()
+
+        voice_rate = st.text_input(tr("Voice rate"))
+        params.voice_rate = voice_rate
 
         bgm_options = [
             (tr("No Background Music"), ""),
             (tr("Random Background Music"), "random"),
             (tr("Custom Background Music"), "custom"),
         ]
-        selected_index = st.selectbox(tr("Background Music"),
-                                      index=1,
-                                      options=range(len(bgm_options)),  # 使用索引作为内部选项值
-                                      format_func=lambda x: bgm_options[x][0]  # 显示给用户的是标签
-                                      )
+        selected_index = st.selectbox(
+            tr("Background Music"),
+            index=1,
+            options=range(len(bgm_options)),  # 使用索引作为内部选项值
+            format_func=lambda x: bgm_options[x][0],  # 显示给用户的是标签
+        )
         # 获取选择的背景音乐类型
         bgm_type = bgm_options[selected_index][1]
 
@@ -314,8 +345,11 @@ with middle_panel:
             if custom_bgm_file and os.path.exists(custom_bgm_file):
                 params.bgm_file = custom_bgm_file
                 # st.write(f":red[已选择自定义背景音乐]：**{custom_bgm_file}**")
-        params.bgm_volume = st.selectbox(tr("Background Music Volume"),
-                                         options=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], index=2)
+        params.bgm_volume = st.selectbox(
+            tr("Background Music Volume"),
+            options=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+            index=2,
+        )
 
 with right_panel:
     with st.container(border=True):
@@ -329,11 +363,12 @@ with right_panel:
             (tr("Center"), "center"),
             (tr("Bottom"), "bottom"),
         ]
-        selected_index = st.selectbox(tr("Position"),
-                                      index=2,
-                                      options=range(len(subtitle_positions)),  # 使用索引作为内部选项值
-                                      format_func=lambda x: subtitle_positions[x][0]  # 显示给用户的是标签
-                                      )
+        selected_index = st.selectbox(
+            tr("Position"),
+            index=2,
+            options=range(len(subtitle_positions)),  # 使用索引作为内部选项值
+            format_func=lambda x: subtitle_positions[x][0],  # 显示给用户的是标签
+        )
         params.subtitle_position = subtitle_positions[selected_index][1]
 
         font_cols = st.columns([0.3, 0.7])
@@ -359,12 +394,10 @@ if start_button:
     log_container = st.empty()
     log_records = []
 
-
     def log_received(msg):
         with log_container:
             log_records.append(msg)
             st.code("\n".join(log_records))
-
 
     logger.add(log_received)
 
