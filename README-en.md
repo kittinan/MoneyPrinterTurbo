@@ -8,7 +8,7 @@
   <a href="https://github.com/harry0703/MoneyPrinterTurbo/blob/main/LICENSE"><img src="https://img.shields.io/github/license/harry0703/MoneyPrinterTurbo.svg?style=for-the-badge" alt="License"></a>
 </p>
 
-English | [简体中文](README.md)
+<h3>English | <a href="README.md">简体中文</a></h3>
 
 
 > Thanks to [RootFTW](https://github.com/Root-FTW) for the translation
@@ -34,7 +34,8 @@ https://reccloud.com
 
 ## Features 🎯
 
-- [x] Complete **MVC architecture**, **clearly structured** code, easy to maintain, supports both API and Web interface
+- [x] Complete **MVC architecture**, **clearly structured** code, easy to maintain, supports both `API`
+  and `Web interface`
 - [x] Supports **AI-generated** video copy, as well as **customized copy**
 - [x] Supports various **high-definition video** sizes
     - [x] Portrait 9:16, `1080x1920`
@@ -49,8 +50,7 @@ https://reccloud.com
 - [x] Supports **background music**, either random or specified music files, with adjustable `background music volume`
 - [x] Video material sources are **high-definition** and **royalty-free**
 - [x] Supports integration with various models such as **OpenAI**, **moonshot**, **Azure**, **gpt4free**, **one-api**,
-  **qianwen**
-  and more
+  **qianwen**, **Google Gemini** and more
 
 ### Future Plans 📅
 
