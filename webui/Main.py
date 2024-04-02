@@ -373,15 +373,15 @@ with right_panel:
 
         font_cols = st.columns([0.3, 0.7])
         with font_cols[0]:
-            params.text_fore_color = st.color_picker(tr("Font Color"), "#FF0000")
+            params.text_fore_color = st.color_picker(tr("Font Color"), "#000000")
         with font_cols[1]:
-            params.font_size = st.slider(tr("Font Size"), 30, 180, 60, 2)
+            params.font_size = st.slider(tr("Font Size"), 30, 180, 90, 2)
 
         stroke_cols = st.columns([0.3, 0.7])
         with stroke_cols[0]:
-            params.stroke_color = st.color_picker(tr("Stroke Color"), "#FF0000")
+            params.stroke_color = st.color_picker(tr("Stroke Color"), "#FFFFFF")
         with stroke_cols[1]:
-            params.stroke_width = st.slider(tr("Stroke Width"), 0.0, 10.0, 1.5, 0.25)
+            params.stroke_width = st.slider(tr("Stroke Width"), 0.0, 10.0, 1.75, 0.25)
 
 start_button = st.button(tr("Generate Video"), use_container_width=True, type="primary")
 if start_button:
